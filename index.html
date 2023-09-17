@@ -48,6 +48,9 @@
             <li>This is a list item 2.</li>
         </ul>
         <p>This is some sample text 2.</p>
+        <div class="activity">
+            <span class="content" lang="fr">résumé</span>
+        </div>
         <ol>
             <li>This is an ordered list item 1.</li>
             <li>This is an ordered list item 2.</li>
@@ -72,7 +75,6 @@
         let currentIndex = 0;
         let currentSpeech = null;
 
-
         // Create UI
         (() => {
             output.innerHTML = '';
@@ -88,56 +90,37 @@
             });
         })();
 
-
         OpenTextToSpeech.addEventListener('click', () => {
             output.classList.add('visible');
-
         });
 
         CloseTextToSpeech.addEventListener('click', () => {
             output.classList.remove('visible');
-
         });
 
         pauseButton.addEventListener('click', () => {
             if (currentSpeech) {
                 speechSynthesis.pause();
             }
+            resetHighlights();
         });
-
 
         playButton.addEventListener('click', () => {
             if (currentSpeech && !currentSpeech.paused) {
                 speechSynthesis.resume();
             } else {
-                // Check if there's a highlighted element and resume from there
-                let highlightedIndex = -1;
-                const duplicates = Array.from(output.children);
-                for (let i = 0; i < duplicates.length; i++) {
-                    if (duplicates[i].classList.contains('highlight')) {
-                        highlightedIndex = i;
-                        break;
-                    }
-                }
-
-                if (highlightedIndex >= 0 && highlightedIndex < contentElements.length) {
-                    currentIndex = highlightedIndex; // Set currentIndex to the highlighted index
-                }
-
                 readNextElement(currentIndex);
             }
         });
 
-
         stopButton.addEventListener('click', () => {
             if (currentSpeech) {
                 speechSynthesis.cancel();
-                resetHighlights();
-                currentSpeech = null; // Reset the current speech
-                currentIndex = 0; // Reset currentIndex to 0
             }
+            resetHighlights();
+            currentSpeech = null; // Reset the current speech
+            currentIndex = 0; // Reset currentIndex to 0
         });
-
 
         function readNextElement(index) {
             if (index < contentElements.length) {
