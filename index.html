@@ -39,13 +39,16 @@
 
     <div class="container">
         <!-- Your content goes here -->
-        <p class="content">This is some sample text 1.</p>
-        <ul class="content">
+        <p>This is some sample text 1.</p>
+        <div class="activity">
+            <span class="content">This is a span</span>
+        </div>
+        <ul>
             <li>This is a list item 1.</li>
             <li>This is a list item 2.</li>
         </ul>
-        <p class="content">This is some sample text 2.</p>
-        <ol class="content">
+        <p>This is some sample text 2.</p>
+        <ol>
             <li>This is an ordered list item 1.</li>
             <li>This is an ordered list item 2.</li>
         </ol>
@@ -73,15 +76,18 @@
         // Create UI
         (() => {
             output.innerHTML = '';
-            contentElements = Array.from(container.querySelectorAll('.content'));
 
-            // Create the output content with all elements
+            // Specify the elements to include in the contentElements array
+            contentElements = Array.from(container.querySelectorAll('.content, p, ul, ol'));
+
+            // Recreate the output content with all elements in their original order
             contentElements.forEach((element) => {
                 const duplicate = document.createElement(element.tagName);
                 duplicate.innerHTML = element.innerHTML;
                 output.appendChild(duplicate);
             });
         })();
+
 
         OpenTextToSpeech.addEventListener('click', () => {
             output.classList.add('visible');
@@ -99,21 +105,39 @@
             }
         });
 
+
         playButton.addEventListener('click', () => {
             if (currentSpeech && !currentSpeech.paused) {
                 speechSynthesis.resume();
             } else {
+                // Check if there's a highlighted element and resume from there
+                let highlightedIndex = -1;
+                const duplicates = Array.from(output.children);
+                for (let i = 0; i < duplicates.length; i++) {
+                    if (duplicates[i].classList.contains('highlight')) {
+                        highlightedIndex = i;
+                        break;
+                    }
+                }
+
+                if (highlightedIndex >= 0 && highlightedIndex < contentElements.length) {
+                    currentIndex = highlightedIndex; // Set currentIndex to the highlighted index
+                }
+
                 readNextElement(currentIndex);
             }
         });
+
 
         stopButton.addEventListener('click', () => {
             if (currentSpeech) {
                 speechSynthesis.cancel();
                 resetHighlights();
+                currentSpeech = null; // Reset the current speech
+                currentIndex = 0; // Reset currentIndex to 0
             }
-            currentIndex = 0;
         });
+
 
         function readNextElement(index) {
             if (index < contentElements.length) {
