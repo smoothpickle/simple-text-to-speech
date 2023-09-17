@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Text-to-speech</title>
+    <style>
+        .container {
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px;
+        }
+
+        #output {
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            display: none;
+        }
+
+        .highlight {
+            background-color: yellow;
+        }
+
+        #output.visible {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Your content goes here -->
+        <p class="content">This is some sample text 1.</p>
+        <ul class="content">
+            <li>This is a list item 1.</li>
+            <li>This is a list item 2.</li>
+        </ul>
+        <p class="content">This is some sample text 2.</p>
+        <ol class="content">
+            <li>This is an ordered list item 1.</li>
+            <li>This is an ordered list item 2.</li>
+        </ol>
+    </div>
+    <button id="open-text-to-speech">Open text-to-speech</button>
+    <button id="close-text-to-speech">Close text-to-speech</button>
+    <button id="pauseButton">Pause</button>
+    <button id="playButton">Play</button>
+    <button id="stopButton">Stop</button>
+    <div id="output"></div>
+
+    <script>
+        const container = document.querySelector('.container');
+        const OpenTextToSpeech = document.getElementById('open-text-to-speech');
+        const CloseTextToSpeech = document.getElementById('close-text-to-speech');
+        const pauseButton = document.getElementById('pauseButton');
+        const playButton = document.getElementById('playButton');
+        const stopButton = document.getElementById('stopButton');
+        const output = document.getElementById('output');
+        let contentElements = [];
+        let currentIndex = 0;
+        let currentSpeech = null;
+
+
+        // Create UI
+        (() => {
+            output.innerHTML = '';
+            contentElements = Array.from(container.querySelectorAll('.content'));
+
+            // Create the output content with all elements
+            contentElements.forEach((element) => {
+                const duplicate = document.createElement(element.tagName);
+                duplicate.innerHTML = element.innerHTML;
+                output.appendChild(duplicate);
+            });
+        })();
+
+        OpenTextToSpeech.addEventListener('click', () => {
+            output.classList.add('visible');
+
+        });
+
+        CloseTextToSpeech.addEventListener('click', () => {
+            output.classList.remove('visible');
+
+        });
+
+        pauseButton.addEventListener('click', () => {
+            if (currentSpeech) {
+                speechSynthesis.pause();
+            }
+        });
+
+        playButton.addEventListener('click', () => {
+            if (currentSpeech && !currentSpeech.paused) {
+                speechSynthesis.resume();
+            } else {
+                readNextElement(currentIndex);
+            }
+        });
+
+        stopButton.addEventListener('click', () => {
+            if (currentSpeech) {
+                speechSynthesis.cancel();
+                resetHighlights();
+            }
+            currentIndex = 0;
+        });
+
+        function readNextElement(index) {
+            if (index < contentElements.length) {
+                // Use the Web Speech API to read the text
+                currentSpeech = new SpeechSynthesisUtterance(contentElements[index].textContent);
+
+                // Highlight the current element
+                const duplicate = output.children[index];
+                duplicate.classList.add('highlight');
+
+                // Remove the highlighting when the speech ends
+                currentSpeech.onend = () => {
+                    duplicate.classList.remove('highlight');
+                    currentIndex++;
+                    currentSpeech = null; // Reset the current speech
+                    readNextElement(currentIndex); // Read the next content element
+                };
+
+                speechSynthesis.speak(currentSpeech);
+            }
+        }
+
+        function resetHighlights() {
+            const duplicates = Array.from(output.children);
+            duplicates.forEach((duplicate) => {
+                duplicate.classList.remove('highlight');
+            });
+        }
+    </script>
+</body>
+
+</html>
