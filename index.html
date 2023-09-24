@@ -6,37 +6,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Text-to-speech</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <style>
         .container {
             margin: 20px;
             padding: 10px;
             border: 1px solid #ccc;
         }
+        
+        .tts-modal.hidden {
+            display: none;
+        }
 
-        button {
+        .tts-modal {
+            display: block;
+        }
+
+        .tts-modal button {
             margin: 10px;
             padding: 10px;
         }
 
-        #output {
+        .tts-modal #tts-output {
             margin: 20px;
             padding: 10px;
             border: 1px solid #ccc;
-            display: none;
+            max-height: 200px;
+            overflow-y: auto;
         }
 
-        .highlight {
+        .tts-modal .highlight {
             background-color: yellow;
         }
 
-        #output.visible {
-            display: block;
+        .tts-controls {
+            text-align: center;
+        }
+
+        .tts-controls button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        .tts-controls button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 
 <body>
-
     <div class="container">
         <!-- Your content goes here -->
         <p>This is some sample text 1.</p>
@@ -61,21 +84,21 @@
         </div>
         <p data-tts="disabled">This should not get copied and read 2.</p>
         <p class="content" lang="fr">résumé activé</p>
+        <button id="open-tts"><i class="fas fa-volume-up"></i> Open text-to-speech</button>
     </div>
-    
-    <div class="tts-modal">
+
+    <div class="tts-modal hidden">
         <div class="tts-content">
-            <div id="output"></div>
+            <div id="tts-output"></div>
         </div> <!-- end .tts-content -->
         <div class="tts-controls">
-            <button id="open-tts">Open text-to-speech</button>
-            <button id="close-tts">Close text-to-speech</button>
-            <button id="pauseButton">Pause</button>
-            <button id="playButton">Play</button>
-            <button id="stopButton">Stop</button>
+            <button id="close-tts"><i class="fas fa-volume-down"></i> Close text-to-speech</button>
+            <button id="pauseButton"><i class="fas fa-pause"></i> Pause</button>
+            <button id="playButton"><i class="fas fa-play"></i> Play</button>
+            <button id="stopButton"><i class="fas fa-stop"></i> Stop</button>
         </div> <!-- end .tts-controls -->
     </div> <!-- end .tts-modal -->
-    
+
     <script>
         class TextToSpeech {
             constructor() {
@@ -85,7 +108,7 @@
                 this.pauseButton = document.getElementById('pauseButton');
                 this.playButton = document.getElementById('playButton');
                 this.stopButton = document.getElementById('stopButton');
-                this.output = document.getElementById('output');
+                this.output = document.getElementById('tts-output');
                 this.contentElements = [];
                 this.currentIndex = 0;
                 this.currentSpeech = null;
@@ -97,6 +120,7 @@
             init() {
                 this.setupUI();
                 this.setupEventListeners();
+                this.loadVoices();
             }
 
             setupUI() {
@@ -119,14 +143,26 @@
             }
 
             setupEventListeners() {
+                // Inside the TextToSpeech class setupEventListeners method
                 this.openButton.addEventListener('click', () => {
-                    this.output.classList.add('visible');
+                    // this.output.classList.add('visible');
+                    this.toggleModal(true);
                 });
 
                 this.closeButton.addEventListener('click', () => {
-                    this.output.classList.remove('visible');
+                    // this.output.classList.remove('visible');
+                    this.toggleModal(false);
+                    
+                    // Reset everything
+                    if (this.currentSpeech) {
+                        speechSynthesis.cancel();
+                    }
+                    
+                    this.resetHighlights();
+                    this.currentSpeech = null; // Reset the current speech
+                    this.currentIndex = 0; // Reset currentIndex to 0
                 });
-
+                
                 this.pauseButton.addEventListener('click', () => {
                     if (this.currentSpeech) {
                         speechSynthesis.pause();
@@ -150,8 +186,19 @@
                     this.currentSpeech = null; // Reset the current speech
                     this.currentIndex = 0; // Reset currentIndex to 0
                 });
+            }
+            
+            // Add a toggleModal method
+            toggleModal(isVisible) {
+                const modal = document.querySelector('.tts-modal');
+                if (isVisible) {
+                    modal.classList.remove('hidden');
+                } else {
+                    modal.classList.add('hidden');
+                }
+            }
 
-                // Get French voice
+            loadVoices() {
                 speechSynthesis.onvoiceschanged = () => {
                     const voices = speechSynthesis.getVoices();
                     this.frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
