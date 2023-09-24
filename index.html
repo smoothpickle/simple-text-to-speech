@@ -62,19 +62,26 @@
         <p data-tts="disabled">This should not get copied and read 2.</p>
         <p class="content" lang="fr">résumé activé</p>
     </div>
-    <button id="open-text-to-speech">Open text-to-speech</button>
-    <button id="close-text-to-speech">Close text-to-speech</button>
-    <button id="pauseButton">Pause</button>
-    <button id="playButton">Play</button>
-    <button id="stopButton">Stop</button>
-    <div id="output"></div>
-
+    
+    <div class="tts-modal">
+        <div class="tts-content">
+            <div id="output"></div>
+        </div> <!-- end .tts-content -->
+        <div class="tts-controls">
+            <button id="open-tts">Open text-to-speech</button>
+            <button id="close-tts">Close text-to-speech</button>
+            <button id="pauseButton">Pause</button>
+            <button id="playButton">Play</button>
+            <button id="stopButton">Stop</button>
+        </div> <!-- end .tts-controls -->
+    </div> <!-- end .tts-modal -->
+    
     <script>
         class TextToSpeech {
             constructor() {
                 this.container = document.querySelector('.container');
-                this.openButton = document.getElementById('open-text-to-speech');
-                this.closeButton = document.getElementById('close-text-to-speech');
+                this.openButton = document.getElementById('open-tts');
+                this.closeButton = document.getElementById('close-tts');
                 this.pauseButton = document.getElementById('pauseButton');
                 this.playButton = document.getElementById('playButton');
                 this.stopButton = document.getElementById('stopButton');
@@ -84,10 +91,10 @@
                 this.currentSpeech = null;
                 this.frenchVoice = null;
 
-                this.initialize();
+                this.init();
             }
 
-            initialize() {
+            init() {
                 this.setupUI();
                 this.setupEventListeners();
             }
