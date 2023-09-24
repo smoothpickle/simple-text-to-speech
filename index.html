@@ -55,6 +55,12 @@
             <li>This is an ordered list item 1.</li>
             <li>This is an ordered list item 2.</li>
         </ol>
+        <div data-tts="disabled">
+            <p>This should not get copied and read.</p>
+            <span class="content" lang="fr">résumé désactivé</span>
+        </div>
+        <p data-tts="disabled">This should not get copied and read 2.</p>
+        <p class="content" lang="fr">résumé activé</p>
     </div>
     <button id="open-text-to-speech">Open text-to-speech</button>
     <button id="close-text-to-speech">Close text-to-speech</button>
@@ -64,91 +70,123 @@
     <div id="output"></div>
 
     <script>
-        const container = document.querySelector('.container');
-        const OpenTextToSpeech = document.getElementById('open-text-to-speech');
-        const CloseTextToSpeech = document.getElementById('close-text-to-speech');
-        const pauseButton = document.getElementById('pauseButton');
-        const playButton = document.getElementById('playButton');
-        const stopButton = document.getElementById('stopButton');
-        const output = document.getElementById('output');
-        let contentElements = [];
-        let currentIndex = 0;
-        let currentSpeech = null;
+        class TextToSpeech {
+            constructor() {
+                this.container = document.querySelector('.container');
+                this.openButton = document.getElementById('open-text-to-speech');
+                this.closeButton = document.getElementById('close-text-to-speech');
+                this.pauseButton = document.getElementById('pauseButton');
+                this.playButton = document.getElementById('playButton');
+                this.stopButton = document.getElementById('stopButton');
+                this.output = document.getElementById('output');
+                this.contentElements = [];
+                this.currentIndex = 0;
+                this.currentSpeech = null;
+                this.frenchVoice = null;
 
-        // Create UI
-        (() => {
-            output.innerHTML = '';
-
-            // Specify the elements to include in the contentElements array
-            contentElements = Array.from(container.querySelectorAll('.content, p, ul, ol'));
-
-            // Recreate the output content with all elements in their original order
-            contentElements.forEach((element) => {
-                const duplicate = document.createElement(element.tagName);
-                duplicate.innerHTML = element.innerHTML;
-                output.appendChild(duplicate);
-            });
-        })();
-
-        OpenTextToSpeech.addEventListener('click', () => {
-            output.classList.add('visible');
-        });
-
-        CloseTextToSpeech.addEventListener('click', () => {
-            output.classList.remove('visible');
-        });
-
-        pauseButton.addEventListener('click', () => {
-            if (currentSpeech) {
-                speechSynthesis.pause();
+                this.initialize();
             }
-            resetHighlights();
-        });
 
-        playButton.addEventListener('click', () => {
-            if (currentSpeech && !currentSpeech.paused) {
-                speechSynthesis.resume();
-            } else {
-                readNextElement(currentIndex);
+            initialize() {
+                this.setupUI();
+                this.setupEventListeners();
             }
-        });
 
-        stopButton.addEventListener('click', () => {
-            if (currentSpeech) {
-                speechSynthesis.cancel();
+            setupUI() {
+                this.output.innerHTML = '';
+
+                // Specify the elements to include in the contentElements array
+                this.contentElements = Array.from(this.container.querySelectorAll('.content, p, ul, ol'));
+
+                // Remove elements with data-tts="disabled"
+                this.contentElements = this.contentElements.filter(element => {
+                    return !element.closest('[data-tts="disabled"]');
+                });
+
+                // Recreate the output content with all elements in their original order
+                this.contentElements.forEach((element) => {
+                    const duplicate = document.createElement(element.tagName);
+                    duplicate.innerHTML = element.innerHTML;
+                    this.output.appendChild(duplicate);
+                });
             }
-            resetHighlights();
-            currentSpeech = null; // Reset the current speech
-            currentIndex = 0; // Reset currentIndex to 0
-        });
 
-        function readNextElement(index) {
-            if (index < contentElements.length) {
-                // Use the Web Speech API to read the text
-                currentSpeech = new SpeechSynthesisUtterance(contentElements[index].textContent);
+            setupEventListeners() {
+                this.openButton.addEventListener('click', () => {
+                    this.output.classList.add('visible');
+                });
 
-                // Highlight the current element
-                const duplicate = output.children[index];
-                duplicate.classList.add('highlight');
+                this.closeButton.addEventListener('click', () => {
+                    this.output.classList.remove('visible');
+                });
 
-                // Remove the highlighting when the speech ends
-                currentSpeech.onend = () => {
-                    duplicate.classList.remove('highlight');
-                    currentIndex++;
-                    currentSpeech = null; // Reset the current speech
-                    readNextElement(currentIndex); // Read the next content element
+                this.pauseButton.addEventListener('click', () => {
+                    if (this.currentSpeech) {
+                        speechSynthesis.pause();
+                    }
+                    this.resetHighlights();
+                });
+
+                this.playButton.addEventListener('click', () => {
+                    if (this.currentSpeech && !this.currentSpeech.paused) {
+                        speechSynthesis.resume();
+                    } else {
+                        this.readNextElement(this.currentIndex);
+                    }
+                });
+
+                this.stopButton.addEventListener('click', () => {
+                    if (this.currentSpeech) {
+                        speechSynthesis.cancel();
+                    }
+                    this.resetHighlights();
+                    this.currentSpeech = null; // Reset the current speech
+                    this.currentIndex = 0; // Reset currentIndex to 0
+                });
+
+                // Get French voice
+                speechSynthesis.onvoiceschanged = () => {
+                    const voices = speechSynthesis.getVoices();
+                    this.frenchVoice = voices.find(voice => voice.lang === 'fr-FR');
                 };
+            }
 
-                speechSynthesis.speak(currentSpeech);
+            readNextElement(index) {
+                if (index < this.contentElements.length) {
+                    // Use the Web Speech API to read the text
+                    this.currentSpeech = new SpeechSynthesisUtterance(this.contentElements[index].textContent);
+
+                    // Set French voice if the element has lang="fr"
+                    if (this.contentElements[index].lang === 'fr') {
+                        this.currentSpeech.voice = this.frenchVoice;
+                    }
+
+                    // Highlight the current element
+                    const duplicate = this.output.children[index];
+                    duplicate.classList.add('highlight');
+
+                    // Remove the highlighting when the speech ends
+                    this.currentSpeech.onend = () => {
+                        duplicate.classList.remove('highlight');
+                        this.currentIndex++;
+                        this.currentSpeech = null; // Reset the current speech
+                        this.readNextElement(this.currentIndex); // Read the next content element
+                    };
+
+                    speechSynthesis.speak(this.currentSpeech);
+                }
+            }
+
+            resetHighlights() {
+                const duplicates = Array.from(this.output.children);
+                duplicates.forEach((duplicate) => {
+                    duplicate.classList.remove('highlight');
+                });
             }
         }
 
-        function resetHighlights() {
-            const duplicates = Array.from(output.children);
-            duplicates.forEach((duplicate) => {
-                duplicate.classList.remove('highlight');
-            });
-        }
+        // Create an instance of the TextToSpeech class
+        const textToSpeech = new TextToSpeech();
     </script>
 </body>
 
